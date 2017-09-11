@@ -6,11 +6,13 @@
 
 Tile* createTile(int xCoord, int yCoord) {
     Tile* t = (Tile *) malloc(sizeof(Tile));
-            t->isHidden = true;
-            t->hasMine = false;
-            t->markedAsMine = false;
-            t->x = xCoord;
-            t->y = yCoord;
+    t->isHidden = true;
+    t->hasMine = false;
+    t->markedAsMine = false;
+    t->surroundingMines = 0;
+    t->x = xCoord;
+    t->y = yCoord;
+    return t;
 }
 
 int minesAroundTile(Tile* t) {
