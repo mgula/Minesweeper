@@ -1,4 +1,13 @@
+#include <stdlib.h>
+
 #include "cursor.h"
+
+/*Initialize the cursor to the approximate middle of the board.*/
+Cursor* createCursor(int boardWidth, int boardLength) {
+    Cursor* c = (Cursor*) malloc(sizeof(Cursor));
+    c->x = boardWidth/2;
+    c->y = boardLength/2;
+}
 
 void moveCursor(Cursor* c, int xIncr, int yIncr, int boardWidth, int boardLength) {
     if (c->x + xIncr >= boardWidth) {

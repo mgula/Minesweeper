@@ -3,4 +3,5 @@ typedef struct _cursor {
     int y;
 } Cursor;
 
+Cursor* createCursor(int boardWidth, int boardLength);
 void moveCursor(Cursor* c, int xIncr, int yIncr, int boardWidth, int boardLength);

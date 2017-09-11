@@ -2,31 +2,23 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "tile.h"
+#include "cursor.h"
+
 #define SMALL 7
 #define MEDIUM 9
 #define LARGE 11
 
 typedef enum {NONE, MOVE_UP, MOVE_DOWN, MOVE_RIGHT, MOVE_LEFT, MARK_MINE, ACTIVATE, QUIT} Action;
 
-typedef struct _tile {
-    int x;
-    int y;
-    bool hasMine;
-    bool isHidden;
-    bool markedAsMine;
-} Tile;
-
-typedef struct _cursor {
-    int x;
-    int y;
-} Cursor;
-
 int length;
 int width;
 
+bool play = true;
+
 char currentCommand;
 Action currentAction = NONE;
-Cursor * cursor;
+Cursor* cursor;
 
 void printControls() {
     printf("w = move cursor up\n");
@@ -35,27 +27,6 @@ void printControls() {
     printf("d = move cursor left\n");
     printf("q = quit\n");
     printf("space = activate at current cursor location\n");
-}
-
-int minesAroundTile(Tile* t) {
-    return 0;
-}
-
-void moveCursor(Cursor * c, int x, int y) {
-    if (c->x + x >= width) {
-        c->x = 0;
-    } else if (c->x + x < 0) {
-        c->x = width - 1;
-    } else {
-        c->x += x;
-    }
-    if (c->y + y >= length) {
-        c->y = 0;
-    } else if (c->y + y < 0) {
-        c->y = length - 1;
-    } else {
-        c->y += y;
-    }
 }
 
 void readInput() {
@@ -90,24 +61,24 @@ void readInput() {
     }
 }
 
-void evaluateInput(bool *play, Cursor * c) {
+void evaluateInput(Cursor* c) {
     switch (currentAction) {
         case NONE:
             break;
         case MOVE_UP:
-            moveCursor(c, 0, -1);
+            moveCursor(c, 0, -1, width, length);
             break;
         case MOVE_DOWN:
-            moveCursor(c, 0, 1);
+            moveCursor(c, 0, 1, width, length);
             break;
         case MOVE_LEFT:
-            moveCursor(c, 1, 0);
+            moveCursor(c, 1, 0, width, length);
             break;
         case MOVE_RIGHT:
-            moveCursor(c, -1, 0);
+            moveCursor(c, -1, 0, width, length);
             break;
         case QUIT:
-            *play = false;
+            play = false;
             break;
         case MARK_MINE:
             break;
@@ -117,15 +88,6 @@ void evaluateInput(bool *play, Cursor * c) {
     currentAction = NONE;
 }
 
-void printTile(Tile *t) {
-    if (t->isHidden) {
-        printf("▢ ");
-    } else {
-        
-    }
-}
-
-/*Fix this method*/
 void printBoard(Tile* board[][width]) {
     for (int i = 0; i < length; i++) {
         for (int j = 0; j < width; j++) {
@@ -139,8 +101,7 @@ void printBoard(Tile* board[][width]) {
     }
 }
 
-int main (int argc, char * argv[]) {
-
+int main (int argc, char* argv[]) {
     /*Set length and width of board.*/
     if (argc == 1) {
         /*For now, default to medium.*/
@@ -159,46 +120,25 @@ int main (int argc, char * argv[]) {
     } 
     
     /*Initialize board with the set length and width, initially no mines.*/
-    Tile * board[length][width];
+    Tile* board[length][width];
+    
     for (int i = 0; i < length; i++) {
         for (int j = 0; j < width; j++) {
-            board[i][j] = (Tile *) malloc(sizeof(Tile));
-            board[i][j]->isHidden = true;
-            board[i][j]->hasMine = false;
-            board[i][j]->markedAsMine = false;
-            board[i][j]->x = j;
-            board[i][j]->y = i;
+            board[i][j] = createTile(j, i);
         }
     }
     
     /*Initialize cursor to approximate middle of board.*/
-    cursor = (Cursor *) malloc(sizeof(Cursor));
-    cursor->x = width/2;
-    cursor->y = length/2;
-    
-    /*Begin game.*/
-    bool play = true;
-    bool *playptr = &play;
+    cursor = createCursor(width, length);
     
     while (play) {
         /*Print board.*/
         printBoard(board);
-        /*
-        for (int i = 0; i < length; i++) {
-            for (int j = 0; j < width; j++) {
-                if (i == cursor->y && j == cursor->x) {
-                    printf("⇲ ");
-                } else {
-                    printTile(board[i][j]);
-                }
-            }
-            printf("\n");
-        }*/
         
         /*Prompt command.*/
         if (scanf(" %c", &currentCommand) != -1) {
             readInput();
-            evaluateInput(playptr, cursor);
+            evaluateInput(cursor);
         } else {
             printf("Invalid command.\n");
         }
