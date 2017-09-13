@@ -7,4 +7,5 @@ typedef struct _tile {
     bool markedAsMine;
 } Tile;
 
-void printTile(Tile *t);
+Tile* createTile(int xCoord, int yCoord);
+void printTile(Tile* t);

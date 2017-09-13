@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 #include "cursor.h"
 
@@ -24,5 +26,13 @@ void moveCursor(Cursor* c, int xIncr, int yIncr, int boardWidth, int boardLength
         c->y = boardLength - 1;
     } else {
         c->y += yIncr;
+    }
+}
+
+void printCursor(Cursor* c, bool markedAsMine, int surroundingMines) {
+    if (markedAsMine) {
+        printf("⊗ ");
+    } else {
+        printf("⇲ ");
     }
 }

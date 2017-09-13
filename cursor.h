@@ -5,3 +5,4 @@ typedef struct _cursor {
 
 Cursor* createCursor(int boardWidth, int boardLength);
 void moveCursor(Cursor* c, int xIncr, int yIncr, int boardWidth, int boardLength);
+void printCursor(Cursor* c, bool markedAsMine, int surroundingMines);

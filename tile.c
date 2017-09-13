@@ -5,7 +5,7 @@
 #include "tile.h"
 
 Tile* createTile(int xCoord, int yCoord) {
-    Tile* t = (Tile *) malloc(sizeof(Tile));
+    Tile* t = (Tile*) malloc(sizeof(Tile));
     t->isHidden = true;
     t->hasMine = false;
     t->markedAsMine = false;
@@ -20,6 +20,11 @@ int minesAroundTile(Tile* t) {
 }
 
 void printTile(Tile* t) {
+    if (t->markedAsMine) {
+        printf("x ");
+        return;
+    }
+    
     if (t->isHidden) {
         printf("▢ ");
     } else {
