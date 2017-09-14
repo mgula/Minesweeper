@@ -16,7 +16,7 @@
 #define MEDIUM 9
 #define LARGE 11
 
-typedef enum {NONE, MOVE_UP, MOVE_DOWN, MOVE_RIGHT, MOVE_LEFT, MARK_MINE, ACTIVATE, PRINT, QUIT} Action;
+typedef enum {NONE, MOVE_UP, MOVE_DOWN, MOVE_RIGHT, MOVE_LEFT, MARK_MINE, ACTIVATE, PRINT, DEBUG, QUIT} Action;
 
 int length;
 int width;
@@ -34,14 +34,20 @@ Action currentAction = NONE;
 
 Cursor* cursor;
 
+bool debug = false;
+
 /*Methods for operations on the board.*/
 void printBoard(Tile* board[][width]) {
     for (int i = 0; i < length; i++) {
         for (int j = 0; j < width; j++) {
             if (i == cursor->y && j == cursor->x) {
-                printCursor(cursor, board[i][j]->markedAsMine, board[i][j]->surroundingMines);
+                printCursor(cursor, board[i][j]->isHidden, board[i][j]->markedAsMine, board[i][j]->surroundingMines);
             } else {
-                printTile(board[i][j]);
+                if (debug) {
+                    printTrueTile(board[i][j]);
+                } else {
+                    printTile(board[i][j]);
+                }
             }
         }
         printf("\n");
@@ -76,6 +82,7 @@ void setMines(Tile* board[][width], int cursorX, int cursorY) {
     
     int* mineX = malloc(sizeof(int) * numMines);
     int* mineY = malloc(sizeof(int) * numMines);
+    printf("length = %d, width = %d\n", length, width);
     printf("cursor x = %d, cursor y = %d\n", cursorX, cursorY);
     printf("generating %d mines...\n", numMines);
     /*probably not the most optimal*/
@@ -273,11 +280,37 @@ void activateTile(Tile* board[][width], int tileX, int tileY, bool initialCall) 
     if (board[tileY][tileX]->isHidden && board[tileY][tileX]->surroundingMines == 0) {
         board[tileY][tileX]->isHidden = false;
         printf("found a 0 tile: tileX = %d, tileY = %d\n", tileX, tileY);
-        /*consider edge + corner case here*/
-        activateTile(board, tileX + 1, tileY, false);
-        activateTile(board, tileX - 1, tileY, false);
-        activateTile(board, tileX, tileY + 1, false);
-        activateTile(board, tileX, tileY - 1, false);
+        /*four corner cases*/
+        if (tileX == 0 && tileY == 0) {
+            activateTile(board, tileX + 1, tileY, false);
+            activateTile(board, tileX, tileY + 1, false);
+        } else if (tileX == length - 1 && tileY == 0) {
+            activateTile(board, tileX - 1, tileY, false);
+            activateTile(board, tileX, tileY + 1, false);    
+        } else if (tileX == 0 && tileY == width - 1) {
+            activateTile(board, tileX + 1, tileY, false);
+            activateTile(board, tileX, tileY - 1, false);   
+        } else if (tileX == length - 1 && tileY == width - 1) {
+            activateTile(board, tileX - 1, tileY, false);
+            activateTile(board, tileX, tileY - 1, false);   
+        } 
+        /*four edge cases*/
+        else if (tileX == 0 && tileY != 0 && tileY != width - 1) {
+                
+        } else if (tileY == 0 && tileX != 0 && tileX != length - 1) {
+                
+        } else if (tileX == length - 1 && tileY != 0 && tileY != width - 1) {
+                
+        } else if (tileY == width - 1 && tileX != 0 && tileX != length - 1) {
+                
+        }
+        /*everything else*/
+        else {
+            activateTile(board, tileX + 1, tileY, false);
+            activateTile(board, tileX - 1, tileY, false);
+            activateTile(board, tileX, tileY + 1, false);
+            activateTile(board, tileX, tileY - 1, false);
+        }
     } else if (board[tileY][tileX]->isHidden) {
         board[tileY][tileX]->isHidden = false;
         return;
@@ -333,6 +366,9 @@ void readInput() {
         case 'n':
             currentAction = ACTIVATE;
             break;
+        case 'j':
+            currentAction = DEBUG;
+            break;
         default:
             printf("Command not recognized. Press 'h' for a list of commands.\n");
             break;
@@ -369,6 +405,9 @@ void evaluateInput(Tile* board[][width]) {
                 calculateSurroudingMines(board);
             }
             activateTile(board, cursor->x, cursor->y, true);
+            break;
+        case DEBUG:
+            debug = !debug;
             break;
         default:
             break;

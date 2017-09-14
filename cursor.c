@@ -29,10 +29,32 @@ void moveCursor(Cursor* c, int xIncr, int yIncr, int boardWidth, int boardLength
     }
 }
 
-void printCursor(Cursor* c, bool markedAsMine, int surroundingMines) {
+void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMines) {
     if (markedAsMine) {
         printf("⊗ ");
     } else {
-        printf("⇲ ");
+        if (isHidden) {
+            printf("⇲ ");
+        } else {
+            if (surroundingMines == 0) {
+                printf("⇲ ");
+            } else if (surroundingMines == 1) {
+                printf("① ");
+            } else if (surroundingMines == 1) {
+                printf("② ");
+            } else if (surroundingMines == 1) {
+                printf("③ ");
+            } else if (surroundingMines == 1) {
+                printf("④ ");
+            } else if (surroundingMines == 1) {
+                printf("⑤ ");
+            } else if (surroundingMines == 1) {
+                printf("⑥ ");
+            } else if (surroundingMines == 1) {
+                printf("⑦ ");
+            } else if (surroundingMines == 1) {
+                printf("⑧ ");
+            }
+        }
     }
 }

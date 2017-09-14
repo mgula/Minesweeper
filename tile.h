@@ -9,3 +9,4 @@ typedef struct _tile {
 
 Tile* createTile(int xCoord, int yCoord);
 void printTile(Tile* t);
+void printTrueTile(Tile* t);

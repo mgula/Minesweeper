@@ -35,3 +35,12 @@ void printTile(Tile* t) {
         }
     }
 }
+
+void printTrueTile(Tile* t) {
+    if (t->hasMine) {
+        printf("X ");
+        return;
+    }
+    
+    printf("%d ", t->surroundingMines);
+}
