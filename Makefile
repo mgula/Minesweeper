@@ -13,7 +13,7 @@ minesweeper: main.o tile.o cursor.o
 	gcc -o minesweeper main.o tile.o cursor.o
 
 run : minesweeper
-	./minesweeper l i
+	./minesweeper
 
 clean :
 	rm -f *.exe *~ *.o
