@@ -19,7 +19,12 @@ int minesAroundTile(Tile* t) {
     return 0;
 }
 
-void printTile(Tile* t) {
+void printTile(Tile* t, bool lose) {
+    if (t->hasMine && lose) {
+        printf("X ");
+        return;
+    }
+    
     if (t->markedAsMine) {
         printf("x ");
         return;
