@@ -44,8 +44,11 @@ void printTile(Tile* t, bool lose) {
 void printTrueTile(Tile* t) {
     if (t->hasMine) {
         printf("X ");
-        return;
+    } else {
+        if (t->surroundingMines == 0) {
+            printf("  ");
+        } else {
+            printf("%d ", t->surroundingMines);
+        }
     }
-    
-    printf("%d ", t->surroundingMines);
 }
