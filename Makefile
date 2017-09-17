@@ -1,13 +1,13 @@
 all: run
 
 tile.o: tile.h tile.c
-	gcc -c -std=c99 tile.c
+	gcc -c -std=c99 -w tile.c
 
 cursor.o: cursor.h cursor.c
-	gcc -c -std=c99 cursor.c
+	gcc -c -std=c99 -w cursor.c
 
 main.o: tile.h cursor.h main.c
-	gcc -c -std=c99 main.c
+	gcc -c -std=c99 -w main.c
 
 minesweeper: main.o tile.o cursor.o
 	gcc -o minesweeper main.o tile.o cursor.o
