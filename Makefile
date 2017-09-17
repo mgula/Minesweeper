@@ -9,11 +9,11 @@ cursor.o: cursor.h cursor.c
 main.o: tile.h cursor.h main.c
 	gcc -c -std=c99 main.c
 
-minesweeper.exe: main.o tile.o cursor.o
-	gcc -o minesweeper.exe main.o tile.o cursor.o
+minesweeper: main.o tile.o cursor.o
+	gcc -o minesweeper main.o tile.o cursor.o
 
-run : minesweeper.exe
-	./minesweeper.exe
+run : minesweeper
+	./minesweeper
 
 clean :
 	rm -f *.exe *~ *.o

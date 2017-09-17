@@ -9,6 +9,6 @@ To run, cd into the directory (cloned or unzipped) and enter
 
 or, simply enter
 
-`./minesweeper.exe`
+`./minesweeper`
 
 as I've included a working executable.
