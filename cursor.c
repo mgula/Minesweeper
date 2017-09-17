@@ -5,13 +5,15 @@
 #include "cursor.h"
 
 /*Initialize the cursor to the approximate middle of the board.*/
-Cursor* createCursor(int boardLength, int boardWidth) {
+Cursor* createCursor(int boardHeight, int boardWidth) {
     Cursor* c = (Cursor*) malloc(sizeof(Cursor));
-    c->x = boardLength/2;
+    c->x = boardHeight/2;
     c->y = boardWidth/2;
     return c;
 }
 
+/*Move the cursor by the given x and y increase. main.c will only ever call this method with
+xIncr and yIncr as 1, 0, or -1.*/
 void moveCursor(Cursor* c, int xIncr, int yIncr, int boardLength, int boardWidth) {
     if (c->x + xIncr >= boardLength) {
         c->x = 0;
@@ -34,29 +36,5 @@ void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMin
         printf("⊗ ");
     } else {
         printf("⇲ ");
-        /*i like the below concept but need to find better unicode characters*/
-        /*if (isHidden) {
-            printf("⇲ ");
-        } else {
-            if (surroundingMines == 0) {
-                printf("⇲ ");
-            } else if (surroundingMines == 1) {
-                printf("①");
-            } else if (surroundingMines == 2) {
-                printf("②");
-            } else if (surroundingMines == 3) {
-                printf("③");
-            } else if (surroundingMines == 4) {
-                printf("④");
-            } else if (surroundingMines == 5) {
-                printf("⑤");
-            } else if (surroundingMines == 6) {
-                printf("⑥");
-            } else if (surroundingMines == 7) {
-                printf("⑦");
-            } else if (surroundingMines == 8) {
-                printf("⑧");
-            }
-        }*/
     }
 }

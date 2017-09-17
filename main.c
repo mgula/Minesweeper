@@ -1,4 +1,5 @@
-/*Command line version of the game Minesweeper. Some notes: Board doesn't 
+/*Author: Marcus Gula
+Command line version of the game Minesweeper. Some notes: Board doesn't 
 have it's own header + c file because it's difficult to pass the length and 
 width of the board to methods in other files, especially since both of those
 dimensions are variable (the player decides on the command line or at runtime).
@@ -22,8 +23,6 @@ Controls:
 
 #include "tile.h"
 #include "cursor.h"
-
-//to do: sudden death
 
 #define MAX_RANGE 50
 #define BUFF_SIZE 50
@@ -90,7 +89,7 @@ void printBoard(Tile* board[height][width], bool lost) {
     printf("\n");
 }
 
-void markMine(Tile* board[height][width]) {
+void markAsMine(Tile* board[height][width]) {
     board[cursor->x][cursor->y]->markedAsMine = !board[cursor->x][cursor->y]->markedAsMine;
 }
 
@@ -108,12 +107,15 @@ bool inArray(int* arr, int x, int l) {
 }
 
 void setMines(Tile* board[height][width], int cursorX, int cursorY) {
+    /*To avoid the first move being a mine, this method looks and the cursor's
+    x and y location in order to not generate mines at that location.*/
+    
     int numMines = (int) (height * width * difficulty);
     
     int* mineX = malloc(sizeof(int) * numMines);
     int* mineY = malloc(sizeof(int) * numMines);
     
-    /*probably not the most optimal*/
+    /*Probably not the most optimal solution.*/
     for (int i = 0; i < numMines; i++) {
         int x = rand() % height;
         int y = rand() % width;
@@ -130,13 +132,13 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
         mineY[i] = y;
     }
     
-    /*place mines*/
+    /*Place mines.*/
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             for (int k = 0; k < numMines; k++) {
                 if (board[i][j]->x == mineX[k] && board[i][j]->y == mineY[k]) {
                     board[i][j]->hasMine = true;
-                    board[i][j]->surroundingMines = -1;
+                    board[i][j]->surroundingMines = -1; //set to -1 so activateTile doesn't get confused
                 }
             }
         }
@@ -146,14 +148,15 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
     free(mineY);
 }
 
-/*again, probably not the most optimal ...*/
+/*Again, probably not the most optimal ...*/
 void calculateSurroudingMines(Tile* board[height][width]) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             if (board[i][j]->hasMine) {
+                /*These cases have already been set to -1 by setMines().*/
                 continue;
             }
-            /*four corner cases - only 3 surrounding tiles*/
+            /*Four corner cases - only 3 surrounding tiles*/
             if (i == 0 && j == 0) {
                 if (board[i + 1][j]->hasMine) {
                     board[i][j]->surroundingMines += 1;
@@ -195,7 +198,7 @@ void calculateSurroudingMines(Tile* board[height][width]) {
                     board[i][j]->surroundingMines += 1;
                 }
             }
-            /*four edge cases - only 5 surrounding tiles*/
+            /*Four edge cases - only 5 surrounding tiles*/
             else if (i == 0 && j != 0 && j != width - 1) {
                 if (board[i][j - 1]->hasMine) {
                     board[i][j]->surroundingMines += 1;
@@ -261,7 +264,7 @@ void calculateSurroudingMines(Tile* board[height][width]) {
                     board[i][j]->surroundingMines += 1;
                 }
             }
-            /*everything else - 8 surrounding tiles*/
+            /*Everything else - 8 surrounding tiles*/
             else {
                 if (board[i + 1][j]->hasMine) {
                     board[i][j]->surroundingMines += 1;
@@ -293,23 +296,23 @@ void calculateSurroudingMines(Tile* board[height][width]) {
 }
 
 void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall) {
-    /*do nothing if current tile is marked as mine*/
+    /*Do nothing if current tile is marked as mine*/
     if (board[tileX][tileY]->markedAsMine) {
         return;
     }
-    /*if tile has mine, game is over*/
+    /*If tile has mine, game is over*/
     if (board[tileX][tileY]->hasMine && initialCall) {
         lose = true;
         printBoard(board, lose);
         return;
     }
-    /*recursively check around tiles with 0 surrounding mines*/
+    /*Recursively check around tiles with 0 surrounding mines*/
     if (board[tileX][tileY]->isHidden && board[tileX][tileY]->surroundingMines == 0 || firstMove) {
         if (firstMove) {
             firstMove = false;
         }
         board[tileX][tileY]->isHidden = false;
-        /*four corner cases*/
+        /*Four corner cases*/
         if (tileX == 0 && tileY == 0) {
             activateTile(board, tileX + 1, tileY, false);
             activateTile(board, tileX, tileY + 1, false);
@@ -327,7 +330,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
             activateTile(board, tileX, tileY - 1, false);
             activateTile(board, tileX - 1, tileY - 1, false);
         } 
-        /*four edge cases*/
+        /*Four edge cases*/
         else if (tileX == 0 && tileY != 0 && tileY != width - 1) {
             activateTile(board, tileX + 1, tileY, false);
             activateTile(board, tileX, tileY + 1, false);
@@ -353,7 +356,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
             activateTile(board, tileX + 1, tileY - 1, false);
             activateTile(board, tileX - 1, tileY - 1, false);
         }
-        /*everything else*/
+        /*Everything else*/
         else {
             activateTile(board, tileX + 1, tileY, false);
             activateTile(board, tileX - 1, tileY, false);
@@ -373,6 +376,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
 }
 
 void winCheck(Tile* board[height][width]) {
+    /*Game is won if all non-mine tiles are uncovered*/
     bool allUncovered = true;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -475,7 +479,7 @@ void evaluateInput(Tile* board[][width]) {
             play = false;
             break;
         case MARK_MINE:
-            markMine(board);
+            markAsMine(board);
             break;
         case PRINT:
             printControls();

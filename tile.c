@@ -1,9 +1,11 @@
+/*Author: Marcus Gula*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
 #include "tile.h"
 
+/*Allocate a new tile on the heap.*/
 Tile* createTile(int xCoord, int yCoord) {
     Tile* t = (Tile*) malloc(sizeof(Tile*));
     t->isHidden = true;
@@ -15,10 +17,7 @@ Tile* createTile(int xCoord, int yCoord) {
     return t;
 }
 
-int minesAroundTile(Tile* t) {
-    return 0;
-}
-
+/*Regular printing of a tile.*/
 void printTile(Tile* t, bool lose) {
     if (t->hasMine && lose) {
         printf("X ");
@@ -41,6 +40,7 @@ void printTile(Tile* t, bool lose) {
     }
 }
 
+/*Debug printing.*/
 void printTrueTile(Tile* t) {
     if (t->hasMine) {
         printf("X ");
