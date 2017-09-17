@@ -7,6 +7,9 @@ dimensions are variable (the player decides on the command line or at runtime).
 To me, it seemed the simplest solution was to make length and width global in 
 this file so all methods have easy access to them.
 
+This program does not support changing the size of the board in between games. All
+games of a session will be of the same board size.
+
 Controls:
     q - quit
     w - move cursor up
@@ -31,8 +34,6 @@ Controls:
 #define INTERMEDIATE .10
 #define HARD .20
 
-typedef enum {NONE, MOVE_UP, MOVE_DOWN, MOVE_RIGHT, MOVE_LEFT, MARK_MINE, ACTIVATE, PRINT, DEBUG, QUIT} Action;
-
 int height;
 int width;
 
@@ -45,13 +46,137 @@ bool win = false;
 bool lose = false;
 
 char currentCommand = 'h';
-Action currentAction = NONE;
 
 Cursor* cursor;
 
 bool debug = false;
 
+/*Methods that return/print some helpful strings.*/
+char* getDifficultyString();
+void printControls();
+
 /*Methods for operations on the board.*/
+void printBoard(Tile* board[height][width], bool lost);
+void markAsMine(Tile* board[height][width]);
+bool inArray(int* arr, int x, int l);
+void setMines(Tile* board[height][width], int cursorX, int cursorY);
+void calculateSurroudingMines(Tile* board[height][width]);
+void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall);
+void winCheck(Tile* board[height][width]);
+void revertToStartingState(Tile* board[height][width]);
+
+/*Reads and executes user input during a game.*/
+void readAndExecuteInput(Tile* board[height][width]);
+
+/*Methods that directly prompt the user for input.*/
+void promptHeight();
+void promptWidth();
+void promptDifficulty();
+void promptNextAction();
+
+int main (int argc, char* argv[]) {
+    printf("Welcome to Minesweeper. For the best experience, resize your\nterminal window to fit the entirety of the board.\n");
+    /*Set difficulty, and length and width of board.*/
+    if (argc != 3) {
+        promptHeight();
+        promptWidth();
+        promptDifficulty();
+    } else if (argc == 3) {
+        if (*argv[1] == 's' || *argv[1] == 'S') {
+            height = width = 9;
+        } else if (*argv[1] == 'm' || *argv[1] == 'M') {
+            height = 9;
+            width = 18;
+        } else if (*argv[1] == 'l' || *argv[1] == 'L') {
+            height = 9;
+            width = 27;
+        } else {
+            /*Default to medium if bad entry*/
+            height = 9;
+            width = 18;
+        }
+        if (*argv[2] == 'e' || *argv[2] == 'E') {
+            difficulty = EASY;
+        } else if (*argv[2] == 'i' || *argv[2] == 'I') {
+            difficulty = INTERMEDIATE;
+        } else if (*argv[2] == 'h' || *argv[2] == 'H') {
+            difficulty = HARD;
+        } else {
+            /*Default to intermediate if bad entry*/
+            difficulty = INTERMEDIATE;
+        }
+    } 
+    printf("Initializing board with height = %d, width = %d, and difficulty = %s.\nPress h for a list of controls.\n", height, width, getDifficultyString());
+    
+    /*Initialize board with the set length and width, initially no mines.*/
+    Tile* board[height][width];
+    
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            board[i][j] = createTile(i, j);
+        }
+    }
+    
+    /*Initialize cursor to approximate middle of board.*/
+    cursor = createCursor(height, width);
+    
+    /*Seed random number generator*/
+    srand(time(NULL)); 
+    
+    while (play) {
+        /*Print the board.*/
+        printBoard(board, lose);
+        
+        /*Prompt command.*/
+        if (scanf(" %c", &currentCommand) != -1) {
+            readAndExecuteInput(board);
+            winCheck(board);
+        } else {
+            printf("Invalid entry.\n");
+        }
+        
+        /*Evaluate winning and losing conditions.*/
+        if (win || lose) {
+            if (win) {
+                printf("Congratulations, you won!\n");
+            }
+            if (lose) {
+                printf("Oops, a mine blew up.\n");
+            }
+            revertToStartingState(board);
+            promptNextAction();
+        }
+    }
+    
+    /*Free memory.*/
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            free(board[i][j]);
+        }
+    }
+    free(cursor);
+    
+    printf("Program closed.\nThanks for playing.\n");
+    return 0;
+}
+
+/*Method used by main() to print the current difficulty.*/
+char* getDifficultyString() {
+    if (difficulty == EASY) {
+        return "easy";
+    } else if (difficulty == INTERMEDIATE) {
+        return "intermediate";
+    } else if (difficulty == HARD) {
+        return "hard";
+    }
+}
+
+/*Prints a list of all keys used.*/
+void printControls() {
+    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nn = uncover tile\nm = mark tile as mine\n");
+}
+
+/*Print the entire board and cursor.*/
 void printBoard(Tile* board[height][width], bool lost) {
     /*Print surrounding border*/
     printf(" ");
@@ -89,10 +214,13 @@ void printBoard(Tile* board[height][width], bool lost) {
     printf("\n");
 }
 
+/*Mark the current tile as a mine. This can be used erroneously by the player,
+it's up to thier deduction skills.*/
 void markAsMine(Tile* board[height][width]) {
     board[cursor->x][cursor->y]->markedAsMine = !board[cursor->x][cursor->y]->markedAsMine;
 }
 
+/*Used by setMine to check if x exists in arr more than once.*/
 bool inArray(int* arr, int x, int l) {
     int in = 0;
     for (int i = 0; i < l; i++) {
@@ -106,10 +234,10 @@ bool inArray(int* arr, int x, int l) {
     return false;
 }
 
+/*Places mines (only after the first move - it won't generate mines at
+the cursor's x or y location). Sets mines simply by setting certain tile's
+hasMine boolean to true.*/
 void setMines(Tile* board[height][width], int cursorX, int cursorY) {
-    /*To avoid the first move being a mine, this method looks and the cursor's
-    x and y location in order to not generate mines at that location.*/
-    
     int numMines = (int) (height * width * difficulty);
     
     int* mineX = malloc(sizeof(int) * numMines);
@@ -148,12 +276,13 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
     free(mineY);
 }
 
-/*Again, probably not the most optimal ...*/
+/*Calculates the number of surrounding mines for every tile on the board. Uses an
+admittedly inefficient "brute force" approach.*/
 void calculateSurroudingMines(Tile* board[height][width]) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             if (board[i][j]->hasMine) {
-                /*These cases have already been set to -1 by setMines().*/
+                //These cases have already been set to -1 by setMines().
                 continue;
             }
             /*Four corner cases - only 3 surrounding tiles*/
@@ -198,7 +327,7 @@ void calculateSurroudingMines(Tile* board[height][width]) {
                     board[i][j]->surroundingMines += 1;
                 }
             }
-            /*Four edge cases - only 5 surrounding tiles*/
+            /*Edge cases - only 5 surrounding tiles*/
             else if (i == 0 && j != 0 && j != width - 1) {
                 if (board[i][j - 1]->hasMine) {
                     board[i][j]->surroundingMines += 1;
@@ -295,6 +424,8 @@ void calculateSurroudingMines(Tile* board[height][width]) {
     }
 }
 
+/*Actives the tile under the cursor. Calls itself to activate all tiles around
+a tile with 0 mines around it.*/
 void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall) {
     /*Do nothing if current tile is marked as mine*/
     if (board[tileX][tileY]->markedAsMine) {
@@ -312,7 +443,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
             firstMove = false;
         }
         board[tileX][tileY]->isHidden = false;
-        /*Four corner cases*/
+        /*Four corner cases - only 3 surrounding tiles*/
         if (tileX == 0 && tileY == 0) {
             activateTile(board, tileX + 1, tileY, false);
             activateTile(board, tileX, tileY + 1, false);
@@ -330,7 +461,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
             activateTile(board, tileX, tileY - 1, false);
             activateTile(board, tileX - 1, tileY - 1, false);
         } 
-        /*Four edge cases*/
+        /*Edge cases - only 5 surrounding tiles*/
         else if (tileX == 0 && tileY != 0 && tileY != width - 1) {
             activateTile(board, tileX + 1, tileY, false);
             activateTile(board, tileX, tileY + 1, false);
@@ -356,7 +487,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
             activateTile(board, tileX + 1, tileY - 1, false);
             activateTile(board, tileX - 1, tileY - 1, false);
         }
-        /*Everything else*/
+        /*Everything else - 8 surrounding tiles*/
         else {
             activateTile(board, tileX + 1, tileY, false);
             activateTile(board, tileX - 1, tileY, false);
@@ -368,6 +499,7 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
             activateTile(board, tileX - 1, tileY - 1, false);
         }
     } else if (board[tileX][tileY]->isHidden && !board[tileX][tileY]->hasMine) {
+        /*If not a 0 tile or mine tile, just uncover it.*/
         board[tileX][tileY]->isHidden = false;
         return;
     } else {
@@ -375,8 +507,8 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
     }
 }
 
+/*Check to see if the player won. A game is won if all non-mine tiles are uncovered*/
 void winCheck(Tile* board[height][width]) {
-    /*Game is won if all non-mine tiles are uncovered*/
     bool allUncovered = true;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -390,6 +522,7 @@ void winCheck(Tile* board[height][width]) {
     }
 }
 
+/*Make a new (same-sized) board, set some booleans back to starting state. */
 void revertToStartingState(Tile* board[height][width]) {
     win = false;
     lose = false;
@@ -411,49 +544,43 @@ void revertToStartingState(Tile* board[height][width]) {
     cursor = createCursor(height, width);
 }
 
-/*Methods for handling user input.*/
-char* getDifficultyString() {
-    if (difficulty == EASY) {
-        return "easy";
-    } else if (difficulty == INTERMEDIATE) {
-        return "intermediate";
-    } else if (difficulty == HARD) {
-        return "hard";
-    }
-}
-
-void printControls() {
-    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nn = uncover tile\nm = mark tile as mine\n");
-}
-
-void readInput() {
+/*Read the currentCommand char and set the corresponding action.*/
+void readAndExecuteInput(Tile* board[height][width]) {
     switch (currentCommand) {
         case 'a':
-            currentAction = MOVE_LEFT;
+            //move left
+            moveCursor(cursor, 0, -1, height, width);
             break;
         case 's':
-            currentAction = MOVE_DOWN;
+            //move down
+            moveCursor(cursor, 1, 0, height, width);
             break;
         case 'd':
-            currentAction = MOVE_RIGHT;
+            //move right
+            moveCursor(cursor, 0, 1, height, width);
             break;
         case 'w':
-            currentAction = MOVE_UP;
+            //move up
+            moveCursor(cursor, -1, 0, height, width);
             break;
         case 'q':
-            currentAction = QUIT;
+            play = false;
             break;
         case 'm':
-            currentAction = MARK_MINE;
+            markAsMine(board);
             break;
         case 'h':
-            currentAction = PRINT;
+            printControls();
             break;
         case 'n':
-            currentAction = ACTIVATE;
+            if (firstMove) {
+                setMines(board, cursor->x, cursor->y);
+                calculateSurroudingMines(board);
+            }
+            activateTile(board, cursor->x, cursor->y, true);
             break;
         case 'j':
-            currentAction = DEBUG;
+            debug = !debug;
             break;
         default:
             printf("Command not recognized. Press 'h' for a list of commands.\n");
@@ -461,46 +588,7 @@ void readInput() {
     }
 }
 
-void evaluateInput(Tile* board[][width]) {
-    switch (currentAction) {
-        case MOVE_LEFT:
-            moveCursor(cursor, 0, -1, height, width);
-            break;
-        case MOVE_DOWN:
-            moveCursor(cursor, 1, 0, height, width);
-            break;
-        case MOVE_RIGHT:
-            moveCursor(cursor, 0, 1, height, width);
-            break;
-        case MOVE_UP:
-            moveCursor(cursor, -1, 0, height, width);
-            break;
-        case QUIT:
-            play = false;
-            break;
-        case MARK_MINE:
-            markAsMine(board);
-            break;
-        case PRINT:
-            printControls();
-            break;
-        case ACTIVATE:
-            if (firstMove) {
-                setMines(board, cursor->x, cursor->y);
-                calculateSurroudingMines(board);
-            }
-            activateTile(board, cursor->x, cursor->y, true);
-            break;
-        case DEBUG:
-            debug = !debug;
-            break;
-        default:
-            break;
-    }
-    currentAction = NONE;
-}
-
-/*Methods that prompt the user for input.*/
+/*Prompts the user to enter a board height. Ensures the user enters an integer.*/
 void promptHeight() {
     char* p, s[BUFF_SIZE];
     int input;
@@ -526,6 +614,7 @@ void promptHeight() {
     }
 }
 
+/*Prompts the user to enter a board width. Ensures the user enters an integer.*/
 void promptWidth() {
     char* p, s[BUFF_SIZE];
     int input;
@@ -551,6 +640,7 @@ void promptWidth() {
     }
 }
 
+/*Prompts the user to select a difficulty (easy, intermediate, or hard).*/
 void promptDifficulty() {
     char input;
     
@@ -577,6 +667,7 @@ void promptDifficulty() {
     }
 }
 
+/*Prompts to user to select between playing another game or quitting.*/
 void promptNextAction() {
     printf("Play again? (y/n)\n");
     char input;
@@ -621,91 +712,4 @@ void promptNextAction() {
     if (adjustDifficulty) {
         promptDifficulty();
     }
-}
-
-int main (int argc, char* argv[]) {
-    printf("Welcome to Minesweeper. For the best experience, resize your\nterminal window to fit the entirety of the board.\n");
-    /*Set difficulty, and length and width of board.*/
-    if (argc != 3) {
-        promptHeight();
-        promptWidth();
-        promptDifficulty();
-    } else if (argc == 3) {
-        if (*argv[1] == 's' || *argv[1] == 'S') {
-            height = width = 9;
-        } else if (*argv[1] == 'm' || *argv[1] == 'M') {
-            height = 9;
-            width = 18;
-        } else if (*argv[1] == 'l' || *argv[1] == 'L') {
-            height = 9;
-            width = 27;
-        } else {
-            /*default to medium if bad entry*/
-            height = 9;
-            width = 18;
-        }
-        if (*argv[2] == 'e' || *argv[2] == 'E') {
-            difficulty = EASY;
-        } else if (*argv[2] == 'i' || *argv[2] == 'I') {
-            difficulty = INTERMEDIATE;
-        } else if (*argv[2] == 'h' || *argv[2] == 'H') {
-            difficulty = HARD;
-        } else {
-            /*default to intermediate if bad entry*/
-            difficulty = INTERMEDIATE;
-        }
-    } 
-    printf("Initializing board with height = %d, width = %d, and difficulty = %s.\nPress h for a list of controls.\n", height, width, getDifficultyString());
-    
-    /*Initialize board with the set length and width, initially no mines.*/
-    Tile* board[height][width];
-    
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            board[i][j] = createTile(i, j);
-        }
-    }
-    
-    /*Initialize cursor to approximate middle of board.*/
-    cursor = createCursor(height, width);
-    
-    /*seed random number generator*/
-    srand(time(NULL)); 
-    
-    while (play) {
-        /*Print the board.*/
-        printBoard(board, lose);
-        
-        /*Prompt command.*/
-        if (scanf(" %c", &currentCommand) != -1) {
-            readInput();
-            evaluateInput(board);
-            winCheck(board);
-        } else {
-            printf("Invalid entry.\n");
-        }
-        
-        /*Evaluate winning and losing conditions.*/
-        if (win || lose) {
-            if (win) {
-                printf("Congratulations, you won!\n");
-            }
-            if (lose) {
-                printf("Oops, a mine blew up.\n");
-            }
-            revertToStartingState(board);
-            promptNextAction();
-        }
-    }
-    
-    /*Free memory.*/
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            free(board[i][j]);
-        }
-    }
-    free(cursor);
-    
-    printf("Program closed.\nThanks for playing.\n");
-    return 0;
 }

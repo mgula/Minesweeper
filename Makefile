@@ -1,19 +1,22 @@
+CC = gcc
+FLAGS = -std=c99 -w
+
 all: run
 
 tile.o: tile.h tile.c
-	gcc -c -std=c99 -w tile.c
+	$(CC) -c $(FLAGS) tile.c
 
 cursor.o: cursor.h cursor.c
-	gcc -c -std=c99 -w cursor.c
+	$(CC) -c $(FLAGS) cursor.c
 
 main.o: tile.h cursor.h main.c
-	gcc -c -std=c99 -w main.c
+	$(CC) -c $(FLAGS) main.c
 
 minesweeper: main.o tile.o cursor.o
-	gcc -o minesweeper main.o tile.o cursor.o
+	$(CC) -o minesweeper main.o tile.o cursor.o
 
 run : minesweeper
 	./minesweeper
 
 clean :
-	rm -f *.exe *~ *.o
+	rm -f *~ *.o
