@@ -34,6 +34,12 @@ Controls:
 #define INTERMEDIATE .10
 #define HARD .20
 
+/*TODO
+-remove debug
+-print info: number of mines, number of mines marked
+-add control to activate all surrounding tiles of a 
+tile where surroundingMines == surroundingMarkedAsMine*/
+
 int height;
 int width;
 
@@ -215,7 +221,7 @@ void printBoard(Tile* board[height][width], bool lost) {
 }
 
 /*Mark the current tile as a mine. This can be used erroneously by the player,
-it's up to thier deduction skills.*/
+it's up to their deduction skills.*/
 void markAsMine(Tile* board[height][width]) {
     board[cursor->x][cursor->y]->markedAsMine = !board[cursor->x][cursor->y]->markedAsMine;
 }
