@@ -61,7 +61,7 @@ void markAsMine(Tile* board[height][width]);
 bool inArray(int* arr, int x, int l);
 void setMines(Tile* board[height][width], int cursorX, int cursorY);
 void calculateSurroudingMines(Tile* board[height][width]);
-void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall);
+void activateTile(Tile* board[height][width], int tileX, int tileY);
 void winCheck(Tile* board[height][width]);
 void revertToStartingState(Tile* board[height][width]);
 
@@ -275,7 +275,6 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
     free(mineX);
     free(mineY);
 }
-
 //Calculates surrounding mines
 void incSurroundingMines(Tile* board[height][width], int row, int col){
     for(int i = -1; i <= 1; i++){
@@ -311,84 +310,35 @@ void calculateSurroudingMines(Tile* board[height][width]) {
 
 /*Actives the tile under the cursor. Calls itself to activate all tiles around
 a tile with 0 mines around it.*/
-void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall) {
+void activateTile(Tile* board[height][width], int tileX, int tileY) {
     /*Do nothing if current tile is marked as mine*/
-    if (board[tileX][tileY]->markedAsMine) {
+    if (board[tileX][tileY]->markedAsMine || !board[tileX][tileY]->isHidden) {
         return;
     }
     /*If tile has mine, game is over*/
-    if (board[tileX][tileY]->hasMine && initialCall) {
+    if (board[tileX][tileY]->hasMine) {
         lose = true;
         printBoard(board, lose);
         return;
     }
-    /*Recursively check around tiles with 0 surrounding mines*/
-    if (board[tileX][tileY]->isHidden && board[tileX][tileY]->surroundingMines == 0 || firstMove) {
-        if (firstMove) {
-            firstMove = false;
-        }
+    if(board[tileX][tileY]->isHidden){
         board[tileX][tileY]->isHidden = false;
-        /*Four corner cases - only 3 surrounding tiles*/
-        if (tileX == 0 && tileY == 0) {
-            activateTile(board, tileX + 1, tileY, false);
-            activateTile(board, tileX, tileY + 1, false);
-            activateTile(board, tileX + 1, tileY + 1, false);
-        } else if (tileX == height - 1 && tileY == 0) {
-            activateTile(board, tileX - 1, tileY, false);
-            activateTile(board, tileX, tileY + 1, false);
-            activateTile(board, tileX - 1, tileY + 1, false);
-        } else if (tileX == 0 && tileY == width - 1) {
-            activateTile(board, tileX + 1, tileY, false);
-            activateTile(board, tileX, tileY - 1, false);  
-            activateTile(board, tileX + 1, tileY - 1, false);
-        } else if (tileX == height - 1 && tileY == width - 1) {
-            activateTile(board, tileX - 1, tileY, false);
-            activateTile(board, tileX, tileY - 1, false);
-            activateTile(board, tileX - 1, tileY - 1, false);
-        } 
-        /*Edge cases - only 5 surrounding tiles*/
-        else if (tileX == 0 && tileY != 0 && tileY != width - 1) {
-            activateTile(board, tileX + 1, tileY, false);
-            activateTile(board, tileX, tileY + 1, false);
-            activateTile(board, tileX, tileY - 1, false);
-            activateTile(board, tileX + 1, tileY + 1, false);
-            activateTile(board, tileX + 1, tileY - 1, false);
-        } else if (tileY == 0 && tileX != 0 && tileX != height - 1) {
-            activateTile(board, tileX, tileY + 1, false);
-            activateTile(board, tileX + 1, tileY, false);
-            activateTile(board, tileX - 1, tileY, false);  
-            activateTile(board, tileX + 1, tileY + 1, false);
-            activateTile(board, tileX - 1, tileY + 1, false);
-        } else if (tileX == height - 1 && tileY != 0 && tileY != width - 1) {
-            activateTile(board, tileX - 1, tileY, false);
-            activateTile(board, tileX, tileY + 1, false);
-            activateTile(board, tileX, tileY - 1, false); 
-            activateTile(board, tileX - 1, tileY + 1, false);
-            activateTile(board, tileX - 1, tileY - 1, false);
-        } else if (tileY == width - 1 && tileX != 0 && tileX != height - 1) {
-            activateTile(board, tileX, tileY - 1, false);
-            activateTile(board, tileX + 1, tileY, false);
-            activateTile(board, tileX - 1, tileY, false);
-            activateTile(board, tileX + 1, tileY - 1, false);
-            activateTile(board, tileX - 1, tileY - 1, false);
+        if(board[tileX][tileY]->surroundingMines == 0){
+            for(int i = -1; i <= 1; i++){
+                for(int j = -1; j <= 1; j++){
+                    int this_x = tileX + i;
+                    int this_y = tileY + j;
+                    
+                    if(i == 0 && j == 0)
+                        continue;
+                    else if(this_x < 0 || this_x >= height)
+                        continue;
+                    else if(this_y < 0 || this_y >= width)
+                        continue;
+                    activateTile(board, tileX+i,tileY+j);
+                }
+            }
         }
-        /*Everything else - 8 surrounding tiles*/
-        else {
-            activateTile(board, tileX + 1, tileY, false);
-            activateTile(board, tileX - 1, tileY, false);
-            activateTile(board, tileX, tileY + 1, false);
-            activateTile(board, tileX, tileY - 1, false);
-            activateTile(board, tileX + 1, tileY + 1, false);
-            activateTile(board, tileX + 1, tileY - 1, false);
-            activateTile(board, tileX - 1, tileY + 1, false);
-            activateTile(board, tileX - 1, tileY - 1, false);
-        }
-    } else if (board[tileX][tileY]->isHidden && !board[tileX][tileY]->hasMine) {
-        /*If not a 0 tile or mine tile, just uncover it.*/
-        board[tileX][tileY]->isHidden = false;
-        return;
-    } else {
-        return;
     }
 }
 
@@ -462,7 +412,7 @@ void readAndExecuteInput(Tile* board[height][width]) {
                 setMines(board, cursor->x, cursor->y);
                 calculateSurroudingMines(board);
             }
-            activateTile(board, cursor->x, cursor->y, true);
+            activateTile(board, cursor->x, cursor->y);
             break;
         case 'j':
             debug = !debug;
