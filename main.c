@@ -276,149 +276,34 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
     free(mineY);
 }
 
+//Calculates surrounding mines
+void incSurroundingMines(Tile* board[height][width], int row, int col){
+    for(int i = -1; i <= 1; i++){
+        for(int j = -1; j <= 1; j++){
+            int this_x = row + i;
+            int this_y = col + j;
+            
+            if(i == 0 && j == 0)
+                continue;
+            else if(this_x < 0 || this_x >= height)
+                continue;
+            else if(this_y < 0 || this_y >= width)
+                continue;
+            else if(board[this_x][this_y]->hasMine == true)
+                continue;
+            else
+                board[this_x][this_y]->surroundingMines += 1;
+        }
+    }
+}
 /*Calculates the number of surrounding mines for every tile on the board. Uses an
 admittedly inefficient "brute force" approach.*/
 void calculateSurroudingMines(Tile* board[height][width]) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             if (board[i][j]->hasMine) {
+                incSurroundingMines(board,i,j);
                 //These cases have already been set to -1 by setMines().
-                continue;
-            }
-            /*Four corner cases - only 3 surrounding tiles*/
-            if (i == 0 && j == 0) {
-                if (board[i + 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            } else if (i == height - 1 && j == 0) {
-                if (board[i][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            } else if (i == 0 && j == width - 1) {
-                if (board[i + 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            } else if (i == height - 1 && j == width - 1) {
-                if (board[i][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            }
-            /*Edge cases - only 5 surrounding tiles*/
-            else if (i == 0 && j != 0 && j != width - 1) {
-                if (board[i][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            } else if (j == 0 && i != 0 && i != height - 1) {
-                if (board[i - 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            } else if (i == height - 1 && j != 0 && j != width - 1) {
-                if (board[i][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            } else if (j == width - 1 && i != 0 && i != height - 1) {
-                if (board[i + 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-            }
-            /*Everything else - 8 surrounding tiles*/
-            else {
-                if (board[i + 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i - 1][j]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
-                if (board[i + 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                } 
-                if (board[i + 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                } 
-                if (board[i - 1][j - 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                } 
-                if (board[i - 1][j + 1]->hasMine) {
-                    board[i][j]->surroundingMines += 1;
-                }
             }
         }
     }
