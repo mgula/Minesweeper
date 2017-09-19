@@ -36,7 +36,6 @@ Controls:
 
 /*TODO
 -remove debug
--print info: number of mines, number of mines marked
 -add control to activate all surrounding tiles of a 
 tile where surroundingMines == surroundingMarkedAsMine*/
 
@@ -44,6 +43,9 @@ int height;
 int width;
 
 double difficulty;
+
+int numMines = 0;
+int minesMarked = 0;
 
 bool play = true;
 bool firstMove = true;
@@ -60,6 +62,7 @@ bool debug = false;
 /*Methods that return/print some helpful strings.*/
 char* getDifficultyString();
 void printControls();
+void printMineInfo();
 
 /*Methods for operations on the board.*/
 void printBoard(Tile* board[height][width], bool lost);
@@ -67,7 +70,8 @@ void markAsMine(Tile* board[height][width]);
 bool inArray(int* arr, int x, int l);
 void setMines(Tile* board[height][width], int cursorX, int cursorY);
 void calculateSurroudingMines(Tile* board[height][width]);
-void activateTile(Tile* board[height][width], int tileX, int tileY);
+void incrementTilesAroundMine(Tile* board[height][width], int tileX, int tileY);
+void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall);
 void winCheck(Tile* board[height][width]);
 void revertToStartingState(Tile* board[height][width]);
 
@@ -130,6 +134,11 @@ int main (int argc, char* argv[]) {
     srand(time(NULL)); 
     
     while (play) {
+        /*Print mine info.*/
+        if (!firstMove) {
+            printMineInfo();
+        }
+        
         /*Print the board.*/
         printBoard(board, lose);
         
@@ -182,6 +191,10 @@ void printControls() {
     printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nn = uncover tile\nm = mark tile as mine\n");
 }
 
+void printMineInfo() {
+    printf("Total mines: %d \t Mines marked: %d\n", numMines, minesMarked);
+}
+
 /*Print the entire board and cursor.*/
 void printBoard(Tile* board[height][width], bool lost) {
     /*Print surrounding border*/
@@ -223,6 +236,11 @@ void printBoard(Tile* board[height][width], bool lost) {
 /*Mark the current tile as a mine. This can be used erroneously by the player,
 it's up to their deduction skills.*/
 void markAsMine(Tile* board[height][width]) {
+    if (board[cursor->x][cursor->y]->markedAsMine) {
+        minesMarked--;
+    } else {
+        minesMarked++;
+    }
     board[cursor->x][cursor->y]->markedAsMine = !board[cursor->x][cursor->y]->markedAsMine;
 }
 
@@ -241,24 +259,21 @@ bool inArray(int* arr, int x, int l) {
 }
 
 /*Places mines (only after the first move - it won't generate mines at
-the cursor's x or y location). Sets mines simply by setting certain tile's
+the cursor's x and y location). Sets mines simply by setting certain tile's
 hasMine boolean to true.*/
 void setMines(Tile* board[height][width], int cursorX, int cursorY) {
-    int numMines = (int) (height * width * difficulty);
+    int ideal = (int) (height * width * difficulty);
     
-    int* mineX = malloc(sizeof(int) * numMines);
-    int* mineY = malloc(sizeof(int) * numMines);
+    int* mineX = malloc(sizeof(int) * ideal);
+    int* mineY = malloc(sizeof(int) * ideal);
     
     /*Probably not the most optimal solution.*/
-    for (int i = 0; i < numMines; i++) {
+    for (int i = 0; i < ideal; i++) {
         int x = rand() % height;
         int y = rand() % width;
         
-        while (x == cursorX || inArray(mineX, x, height)) {
+        while ((x == cursorX && y == cursorY) || inArray(mineX, x, height) || inArray(mineY, y, width)) {
             x = rand() % height;
-        }
-        
-        while (y == cursorY || inArray(mineY, y, width)) {
             y = rand() % width;
         }
         
@@ -269,10 +284,16 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
     /*Place mines.*/
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            for (int k = 0; k < numMines; k++) {
+            bool unique = true;
+            for (int k = 0; k < ideal; k++) {
                 if (board[i][j]->x == mineX[k] && board[i][j]->y == mineY[k]) {
+                    if (unique) {
+                        numMines++;
+                        unique = false;
+                    }
                     board[i][j]->hasMine = true;
                     board[i][j]->surroundingMines = -1; //set to -1 so activateTile doesn't get confused
+                    
                 }
             }
         }
@@ -281,67 +302,72 @@ void setMines(Tile* board[height][width], int cursorX, int cursorY) {
     free(mineX);
     free(mineY);
 }
-//Calculates surrounding mines
-void incSurroundingMines(Tile* board[height][width], int row, int col){
-    for(int i = -1; i <= 1; i++){
-        for(int j = -1; j <= 1; j++){
-            int this_x = row + i;
-            int this_y = col + j;
-            
-            if(i == 0 && j == 0)
-                continue;
-            else if(this_x < 0 || this_x >= height)
-                continue;
-            else if(this_y < 0 || this_y >= width)
-                continue;
-            else if(board[this_x][this_y]->hasMine == true)
-                continue;
-            else
-                board[this_x][this_y]->surroundingMines += 1;
-        }
-    }
-}
-/*Calculates the number of surrounding mines for every tile on the board. Uses an
-admittedly inefficient "brute force" approach.*/
+
+/*Calculates the number of surrounding mines for every tile on the board.*/
 void calculateSurroudingMines(Tile* board[height][width]) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             if (board[i][j]->hasMine) {
-                incSurroundingMines(board,i,j);
-                //These cases have already been set to -1 by setMines().
+                incrementTilesAroundMine(board, i, j);
+            }
+        }
+    }
+}
+
+/*Add one to surroundingMines for all (non-mine) tiles surrounding a mine.*/
+void incrementTilesAroundMine(Tile* board[height][width], int tileX, int tileY) {
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            int this_x = tileX + i;
+            int this_y = tileY + j;
+            
+            if (i == 0 && j == 0) {
+                continue;
+            } else if (this_x < 0 || this_x >= height) {
+                continue;
+            } else if (this_y < 0 || this_y >= width) {
+                continue;
+            } else if (board[this_x][this_y]->hasMine == true) {
+                continue;
+            } else {
+                board[this_x][this_y]->surroundingMines += 1;
             }
         }
     }
 }
 
 /*Actives the tile under the cursor. Calls itself to activate all tiles around
-a tile with 0 mines around it.*/
-void activateTile(Tile* board[height][width], int tileX, int tileY) {
-    /*Do nothing if current tile is marked as mine*/
+a tile with surroundingMines == 0.*/
+void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall) {
+    /*Do nothing if current tile is marked as mine or already activated*/
     if (board[tileX][tileY]->markedAsMine || !board[tileX][tileY]->isHidden) {
         return;
     }
+    
     /*If tile has mine, game is over*/
-    if (board[tileX][tileY]->hasMine) {
+    if (board[tileX][tileY]->hasMine && initialCall) {
         lose = true;
         printBoard(board, lose);
         return;
     }
-    if(board[tileX][tileY]->isHidden){
+    
+    if (board[tileX][tileY]->isHidden && !board[tileX][tileY]->hasMine) {
         board[tileX][tileY]->isHidden = false;
-        if(board[tileX][tileY]->surroundingMines == 0){
-            for(int i = -1; i <= 1; i++){
-                for(int j = -1; j <= 1; j++){
+        if (board[tileX][tileY]->surroundingMines == 0 || firstMove) {
+            firstMove = false;
+            for (int i = -1; i <= 1; i++){
+                for (int j = -1; j <= 1; j++){
                     int this_x = tileX + i;
                     int this_y = tileY + j;
                     
-                    if(i == 0 && j == 0)
+                    if (i == 0 && j == 0) {
                         continue;
-                    else if(this_x < 0 || this_x >= height)
+                    } else if(this_x < 0 || this_x >= height) {
                         continue;
-                    else if(this_y < 0 || this_y >= width)
+                    } else if(this_y < 0 || this_y >= width) {
                         continue;
-                    activateTile(board, tileX+i,tileY+j);
+                    }
+                    activateTile(board, tileX+i,tileY+j, false);
                 }
             }
         }
@@ -370,6 +396,9 @@ void revertToStartingState(Tile* board[height][width]) {
     
     firstMove = true;
     
+    minesMarked = 0;
+    numMines = 0;
+    
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             free(board[i][j]);
@@ -389,19 +418,19 @@ void revertToStartingState(Tile* board[height][width]) {
 void readAndExecuteInput(Tile* board[height][width]) {
     switch (currentCommand) {
         case 'a':
-            //move left
+            /*move left*/
             moveCursor(cursor, 0, -1, height, width);
             break;
         case 's':
-            //move down
+            /*move down*/
             moveCursor(cursor, 1, 0, height, width);
             break;
         case 'd':
-            //move right
+            /*move right*/
             moveCursor(cursor, 0, 1, height, width);
             break;
         case 'w':
-            //move up
+            /*move up*/
             moveCursor(cursor, -1, 0, height, width);
             break;
         case 'q':
@@ -418,7 +447,7 @@ void readAndExecuteInput(Tile* board[height][width]) {
                 setMines(board, cursor->x, cursor->y);
                 calculateSurroudingMines(board);
             }
-            activateTile(board, cursor->x, cursor->y);
+            activateTile(board, cursor->x, cursor->y, true);
             break;
         case 'j':
             debug = !debug;
