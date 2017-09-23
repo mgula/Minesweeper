@@ -18,10 +18,21 @@ Tile* createTile(int xCoord, int yCoord) {
 }
 
 /*Regular printing of a tile.*/
-void printTile(Tile* t, bool lose) {
-    if (t->hasMine && lose) {
-        printf("X ");
-        return;
+void printTile(Tile* t, bool lose, bool win) {
+    if (lose) {
+        if (t->hasMine) {
+            if (t->markedAsMine) {
+                printf("⚐ ");
+            } else {
+                printf("☠ ");
+            }
+            return;
+        }
+    } else if (win) {
+        if (t->hasMine) {
+            printf("⚐ ");
+            return;
+        }
     }
     
     if (t->markedAsMine) {

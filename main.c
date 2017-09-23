@@ -16,6 +16,7 @@ Controls:
     a - move cursor left
     s - move cursor down
     d - move cursor right
+    b - uncover all surrounding tiles
     n - uncover tile
     m - mark tile as mine*/
     
@@ -33,11 +34,6 @@ Controls:
 #define EASY .05
 #define INTERMEDIATE .10
 #define HARD .20
-
-/*TODO
--remove debug
--add control to activate all surrounding tiles of a 
-tile where surroundingMines == surroundingMarkedAsMine*/
 
 int height;
 int width;
@@ -57,21 +53,20 @@ char currentCommand = 'h';
 
 Cursor* cursor;
 
-bool debug = false;
-
 /*Methods that return/print some helpful strings.*/
 char* getDifficultyString();
 void printControls();
 void printMineInfo();
 
 /*Methods for operations on the board.*/
-void printBoard(Tile* board[height][width], bool lost);
+void printBoard(Tile* board[height][width]);
 void markAsMine(Tile* board[height][width]);
 bool inArray(int* arr, int x, int l);
 void setMines(Tile* board[height][width], int cursorX, int cursorY);
 void calculateSurroudingMines(Tile* board[height][width]);
 void incrementTilesAroundMine(Tile* board[height][width], int tileX, int tileY);
 void activateTile(Tile* board[height][width], int tileX, int tileY, bool initialCall);
+void activateSurroundingTiles(Tile* board[height][width], int tileX, int tileY);
 void winCheck(Tile* board[height][width]);
 void revertToStartingState(Tile* board[height][width]);
 
@@ -140,7 +135,7 @@ int main (int argc, char* argv[]) {
         }
         
         /*Print the board.*/
-        printBoard(board, lose);
+        printBoard(board);
         
         /*Prompt command.*/
         if (scanf(" %c", &currentCommand) != -1) {
@@ -157,7 +152,9 @@ int main (int argc, char* argv[]) {
             }
             if (lose) {
                 printf("Oops, a mine blew up.\n");
+                
             }
+            printBoard(board);
             revertToStartingState(board);
             promptNextAction();
         }
@@ -188,7 +185,7 @@ char* getDifficultyString() {
 
 /*Prints a list of all keys used.*/
 void printControls() {
-    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nn = uncover tile\nm = mark tile as mine\n");
+    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nb = uncover surrounding tiles - base tile must be uncoverred, with surrouding mines marked\nn = uncover tile\nm = mark tile as mine\n");
 }
 
 void printMineInfo() {
@@ -196,7 +193,7 @@ void printMineInfo() {
 }
 
 /*Print the entire board and cursor.*/
-void printBoard(Tile* board[height][width], bool lost) {
+void printBoard(Tile* board[height][width]) {
     /*Print surrounding border*/
     printf(" ");
     for (int i = 0; i < width; i++) {
@@ -209,17 +206,15 @@ void printBoard(Tile* board[height][width], bool lost) {
         printf("| ");
         for (int j = 0; j < width; j++) {
             if (i == cursor->x && j == cursor->y) {
-                if (lost) {
-                    printf("☠ ");
+                if (lose) {
+                    printf("☹ ");
+                } else if (win) {
+                    printf("☺ ");
                 } else {
                     printCursor(cursor, board[i][j]->isHidden, board[i][j]->markedAsMine, board[i][j]->surroundingMines);
                 }
             } else {
-                if (debug) {
-                    printTrueTile(board[i][j]);
-                } else {
-                    printTile(board[i][j], lost);
-                }
+                printTile(board[i][j], lose, win);
             }
         }
         printf("|\n");
@@ -347,7 +342,6 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
     /*If tile has mine, game is over*/
     if (board[tileX][tileY]->hasMine && initialCall) {
         lose = true;
-        printBoard(board, lose);
         return;
     }
     
@@ -369,6 +363,57 @@ void activateTile(Tile* board[height][width], int tileX, int tileY, bool initial
                     }
                     activateTile(board, tileX+i,tileY+j, false);
                 }
+            }
+        }
+    }
+}
+
+/*Uncover all tiles surrounding an uncovered tile with all mines marked.*/
+void activateSurroundingTiles(Tile* board[height][width], int cursorX, int cursorY) {
+    if (firstMove || board[cursorX][cursorY]->isHidden || board[cursorX][cursorY]->surroundingMines == 0) {
+        return;
+    }
+    
+    int surroundingMarkedAsMine = 0;
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            int this_x = cursorX + i;
+            int this_y = cursorY + j;
+            
+            if (i == 0 && j == 0) {
+                continue;
+            } else if (this_x < 0 || this_x >= height) {
+                continue;
+            } else if (this_y < 0 || this_y >= width) {
+                continue;
+            } else if (board[this_x][this_y]->markedAsMine) {
+                surroundingMarkedAsMine += 1;
+            }
+        }
+    }
+    
+    if (board[cursorX][cursorY]->surroundingMines != surroundingMarkedAsMine) {
+        return;
+    }
+    
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            int this_x = cursorX + i;
+            int this_y = cursorY + j;
+            
+            if (i == 0 && j == 0) {
+                continue;
+            } else if (this_x < 0 || this_x >= height) {
+                continue;
+            } else if (this_y < 0 || this_y >= width) {
+                continue;
+            } else if (board[this_x][this_y]->markedAsMine) {
+                continue;
+            } else if (board[this_x][this_y]->hasMine) {
+                lose = true;
+                return;
+            } else {
+                activateTile(board, this_x, this_y, false);
             }
         }
     }
@@ -436,6 +481,9 @@ void readAndExecuteInput(Tile* board[height][width]) {
         case 'q':
             play = false;
             break;
+        case 'b':
+            activateSurroundingTiles(board, cursor->x, cursor->y);
+            break;
         case 'm':
             markAsMine(board);
             break;
@@ -448,9 +496,6 @@ void readAndExecuteInput(Tile* board[height][width]) {
                 calculateSurroudingMines(board);
             }
             activateTile(board, cursor->x, cursor->y, true);
-            break;
-        case 'j':
-            debug = !debug;
             break;
         default:
             printf("Command not recognized. Press 'h' for a list of commands.\n");

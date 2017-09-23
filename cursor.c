@@ -36,6 +36,6 @@ void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMin
     if (markedAsMine) {
         printf("⊗ ");
     } else {
-        printf("⇲ ");
+        printf("↓ ");
     }
 }
