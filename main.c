@@ -147,14 +147,13 @@ int main (int argc, char* argv[]) {
         
         /*Evaluate winning and losing conditions.*/
         if (win || lose) {
+            printBoard(board);
             if (win) {
                 printf("Congratulations, you won!\n");
-            }
-            if (lose) {
+            } else if (lose) {
                 printf("Oops, a mine blew up.\n");
                 
             }
-            printBoard(board);
             revertToStartingState(board);
             promptNextAction();
         }
