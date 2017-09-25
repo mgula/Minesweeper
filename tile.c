@@ -18,19 +18,31 @@ Tile* createTile(int xCoord, int yCoord) {
 }
 
 /*Regular printing of a tile.*/
-void printTile(Tile* t, bool lose, bool win) {
+void printTile(Tile* t, bool lose, bool win, bool unicode) {
     if (lose) {
         if (t->hasMine) {
             if (t->markedAsMine) {
-                printf("⚐ ");
+                if (unicode) {
+                    printf("⚐ ");
+                } else {
+                    printf("x ");
+                }
             } else {
-                printf("☠ ");
+                if (unicode) {
+                    printf("☠ ");
+                } else {
+                    printf("X ");
+                }
             }
             return;
         }
     } else if (win) {
         if (t->hasMine) {
-            printf("⚐ ");
+            if (unicode) {
+                printf("⚐ ");
+            } else {
+                printf("x ");
+            }
             return;
         }
     }
@@ -41,7 +53,11 @@ void printTile(Tile* t, bool lose, bool win) {
     }
     
     if (t->isHidden) {
-        printf("▢ ");
+        if (unicode) {
+            printf("▢ ");
+        } else {
+            printf("* ");
+        }
     } else {
         if (t->surroundingMines == 0) {
             printf("  ");

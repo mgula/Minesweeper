@@ -7,4 +7,4 @@ typedef struct _cursor {
 
 Cursor* createCursor(int boardLength, int boardWidth);
 void moveCursor(Cursor* c, int xIncr, int yIncr, int boardWidth, int boardLength);
-void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMines);
+void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMines, bool lose, bool win, bool unicode);

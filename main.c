@@ -16,6 +16,7 @@ Controls:
     a - move cursor left
     s - move cursor down
     d - move cursor right
+    c - toggle unicode/ascii
     b - uncover all surrounding tiles
     n - uncover tile
     m - mark tile as mine*/
@@ -50,6 +51,8 @@ bool win = false;
 bool lose = false;
 
 char currentCommand = 'h';
+
+bool charStyle = CHARSTYLE;
 
 Cursor* cursor;
 
@@ -184,7 +187,7 @@ char* getDifficultyString() {
 
 /*Prints a list of all keys used.*/
 void printControls() {
-    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nb = uncover surrounding tiles - base tile must be uncoverred, with surrouding mines marked\nn = uncover tile\nm = mark tile as mine\n");
+    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nc = toggle unicode/ascii\nb = uncover surrounding tiles - base tile must be uncoverred, with surrouding mines marked\nn = uncover tile\nm = mark tile as mine\n");
 }
 
 void printMineInfo() {
@@ -205,15 +208,9 @@ void printBoard(Tile* board[height][width]) {
         printf("| ");
         for (int j = 0; j < width; j++) {
             if (i == cursor->x && j == cursor->y) {
-                if (lose) {
-                    printf("☹ ");
-                } else if (win) {
-                    printf("☺ ");
-                } else {
-                    printCursor(cursor, board[i][j]->isHidden, board[i][j]->markedAsMine, board[i][j]->surroundingMines);
-                }
+                printCursor(cursor, board[i][j]->isHidden, board[i][j]->markedAsMine, board[i][j]->surroundingMines, lose, win, charStyle);
             } else {
-                printTile(board[i][j], lose, win);
+                printTile(board[i][j], lose, win, charStyle);
             }
         }
         printf("|\n");
@@ -479,6 +476,9 @@ void readAndExecuteInput(Tile* board[height][width]) {
             break;
         case 'q':
             play = false;
+            break;
+        case 'c':
+            charStyle = !charStyle;
             break;
         case 'b':
             activateSurroundingTiles(board, cursor->x, cursor->y);

@@ -32,7 +32,20 @@ void moveCursor(Cursor* c, int xIncr, int yIncr, int boardLength, int boardWidth
     }
 }
 
-void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMines) {
+void printCursor(Cursor* c, bool isHidden, bool markedAsMine, int surroundingMines, bool lose, bool win, bool unicode) {
+    if (!unicode) {
+        printf("v ");
+        return;
+    }
+    
+    if (lose) {
+        printf("☹ ");
+        return;
+    } else if (win) {
+        printf("☺ ");
+        return;
+    }
+    
     if (markedAsMine) {
         printf("⊗ ");
     } else {

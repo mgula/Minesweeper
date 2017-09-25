@@ -11,5 +11,4 @@ typedef struct _tile {
 } Tile;
 
 Tile* createTile(int xCoord, int yCoord);
-void printTile(Tile* t, bool lose, bool win);
-void printTrueTile(Tile* t);
+void printTile(Tile* t, bool lose, bool win, bool unicode);
