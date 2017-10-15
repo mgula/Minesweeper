@@ -228,6 +228,9 @@ void printBoard(Tile* board[height][width]) {
 /*Mark the current tile as a mine. This can be used erroneously by the player,
 it's up to their deduction skills.*/
 void markAsMine(Tile* board[height][width]) {
+    if (!board[cursor->x][cursor->y]->isHidden) {
+        return;
+    }
     if (board[cursor->x][cursor->y]->markedAsMine) {
         minesMarked--;
     } else {
