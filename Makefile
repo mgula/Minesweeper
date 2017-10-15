@@ -1,7 +1,7 @@
 # to run the program, enter "make all" or "make run" on the command line.
 
 # if the board is printing strangely (you'll know), try building without 
-# unicode characters using "make ascii". you can also toggle betweena unicode/ascii in game.
+# unicode characters using "make ascii". you can also toggle between unicode/ascii in game.
 
 CC = gcc
 FLAGS = -std=c99 -w
@@ -26,7 +26,7 @@ minesweeper: main.o tile.o cursor.o
 	$(CC) -o minesweeper main.o tile.o cursor.o
 
 minesweeper_ascii: main_ascii.o tile.o cursor.o
-	$(CC) -o minesweeper_ascii main.o tile.o cursor.o
+	$(CC) -o minesweeper main.o tile.o cursor.o
 
 # to compile with command line arguments, add your arguments after ./minesweeper,
 # like so: ./minesweeper <size> <difficulty>
@@ -37,7 +37,7 @@ run : minesweeper
 	./minesweeper
 
 run_ascii : minesweeper_ascii
-	./minesweeper_ascii
+	./minesweeper
 
 clean :
-	rm -f *~ *.o minesweeper minesweeper_ascii
+	rm -f *~ *.o minesweeper
