@@ -31,6 +31,7 @@ Controls:
 
 #define MAX_RANGE 50
 #define BUFF_SIZE 50
+#define BASE 10
 
 #define EASY .05
 #define INTERMEDIATE .10
@@ -512,7 +513,7 @@ void promptHeight() {
     while (!resolved) {
         printf("Enter a board height (between 2 and %d):\n", MAX_RANGE);
         while (fgets(s, sizeof(s), stdin)) {
-            input = strtol(s, &p, 10);
+            input = strtol(s, &p, BASE);
             if (p == s || *p != '\n') {
                 printf("Invalid entry - must be an integer.\nEnter a board height (between 2 and %d):\n", MAX_RANGE);
             } else {
@@ -538,7 +539,7 @@ void promptWidth() {
     while (!resolved) {
         printf("Enter a board width (between 2 and %d):\n", MAX_RANGE);
         while (fgets(s, sizeof(s), stdin)) {
-            input = strtol(s, &p, 10);
+            input = strtol(s, &p, BASE);
             if (p == s || *p != '\n') {
                 printf("Invalid entry - must be an integer.\nEnter a board width (between 2 and %d):\n", MAX_RANGE);
             } else {
@@ -556,27 +557,28 @@ void promptWidth() {
 
 /*Prompts the user to select a difficulty (easy, intermediate, or hard).*/
 void promptDifficulty() {
-    char input;
+    char input[BUFF_SIZE];
     
     bool resolved = false;
     
     while (!resolved) {
         printf("Enter a difficulty:\n\te = easy\n\ti = intermediate\n\th = hard\n");
-        if (scanf(" %c", &input) != -1) {
-            if (input == 'e' || input == 'E') {
+        while (fgets(input, sizeof(input), stdin)) {
+            if (input[0] == 'e' || input[0] == 'E') {
                 difficulty = EASY;
                 resolved = true;
-            } else if (input == 'i' || input == 'I') {
+                break;
+            } else if (input[0] == 'i' || input[0] == 'I') {
                 difficulty = INTERMEDIATE;
                 resolved = true;
-            } else if (input == 'h' || input == 'H') {
+                break;
+            } else if (input[0] == 'h' || input[0] == 'H') {
                 difficulty = HARD;
                 resolved = true;
+                break;
             } else {
                 printf("Invalid entry - enter e, i, or h.\n");
             }
-        } else {
-            printf("Invalid entry.\n");
         }
     }
 }
@@ -584,23 +586,22 @@ void promptDifficulty() {
 /*Prompts to user to select between playing another game or quitting.*/
 void promptNextAction() {
     printf("Play again? (y/n)\n");
-    char input;
+    char input[BUFF_SIZE];
     
     bool resolved = false;
     bool adjustDifficulty = false;
     
     while (!resolved) {
-        if (scanf(" %c", &input) != -1) {
-            if (input == 'n' || input == 'N') {
+        while (fgets(input, sizeof(input), stdin)) {
+            if (input[0] == 'n' || input[0] == 'N') {
                 play = false;
                 return;
-            } else if (input == 'y' || input == 'Y') {
+            } else if (input[0] == 'y' || input[0] == 'Y') {
                 resolved = true;
+                break;
             } else {
                 printf("Enter y or n.\n");
             }
-        } else {
-            printf("Invalid entry.\n");
         }
     }
     
@@ -609,17 +610,17 @@ void promptNextAction() {
     resolved = false;
     
     while (!resolved) {
-        if (scanf(" %c", &input) != -1) {
-            if (input == 'n' || input == 'N') {
+        while (fgets(input, sizeof(input), stdin)) {
+            if (input[0] == 'n' || input[0] == 'N') {
                 resolved = true;
-            } else if (input == 'y' || input == 'Y') {
+                break;
+            } else if (input[0] == 'y' || input[0] == 'Y') {
                 adjustDifficulty = true;
                 resolved = true;
+                break;
             } else {
                 printf("Enter y or n.\n");
             }
-        } else {
-            printf("Invalid entry.\n");
         }
     }
     
