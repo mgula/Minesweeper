@@ -188,7 +188,7 @@ char* getDifficultyString() {
 
 /*Prints a list of all keys used.*/
 void printControls() {
-    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nc = toggle unicode/ascii\nb = uncover surrounding tiles - base tile must be uncoverred, with surrouding mines marked\nn = uncover tile\nm = mark tile as mine\n");
+    printf("q = quit\nw = move cursor up\na = move cursor left\ns = move cursor down\nd = move cursor right\nc = toggle unicode/ascii\nb = uncover surrounding tiles - base tile must be uncovered, with surrouding mines marked\nn = uncover tile\nm = mark tile as mine\n");
 }
 
 void printMineInfo() {
